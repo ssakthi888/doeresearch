@@ -7,6 +7,8 @@
 #' @param mean.comparison.test 0 for no test, 1 for LSD test, 2 for Dunccan test and 3 for HSD test
 #' @importFrom agricolae LSD.test HSD.test duncan.test
 #' @importFrom stats anova lm shapiro.test pf
+#' @importFrom dplyr %>% filter arrange
+#' @importFrom tidyr spread gather
 #' @return ANOVA, interpretation of ANOVA, R-square, normality test result, SEd and multiple comparison test result
 #' @export
 
