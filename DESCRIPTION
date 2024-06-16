@@ -2,7 +2,6 @@ Package: doeresearch
 Type: Package
 Title: split Plot Analysis
 Version: 0.1.0
-Authors@R: Sakthivel
 Description: Split plot Analysis
 License: NA
 Encoding: UTF-8
