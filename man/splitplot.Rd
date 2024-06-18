@@ -4,7 +4,7 @@
 \alias{splitplot}
 \title{Analysis of Split plot design}
 \usage{
-splitplot(data, block, main.plot, sub.plot, mean.comparison.test)
+splitplot(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
 }
 \arguments{
 \item{data}{dependent variables}
