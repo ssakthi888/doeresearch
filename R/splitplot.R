@@ -191,7 +191,7 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test){
     # Construct CD 
     CD_main = round(t_main*SEd_main,3)
     CD_sub = round(t_sub*SEd_sub,3)
-    CD_MxS = round(t_MxS*SEd_MxS)
+    CD_MxS = round(t_MxS*SEd_MxS,3)
     CD_SxM = round(t_SxM*SEd_SxM,3)
     
     # Combine CD values into a data frame
