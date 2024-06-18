@@ -65,7 +65,8 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
       mean_col <- result %>%
         rowwise() %>%
         mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE))
-      
+      mean_row <- round(mean_row,2)
+      mean_col <- round(mean_col,2)
       # Combine mean_row and mean_col into final result
       result <- bind_rows(mean_col, mean_row)
       
