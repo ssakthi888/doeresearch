@@ -16,6 +16,8 @@ splitplot(data, block, main.plot, sub.plot, mean.comparison.test)
 \item{sub.plot}{vector containing sub-plot levels}
 
 \item{mean.comparison.test}{0 for no test, 1 for LSD test, 2 for Dunccan test and 3 for HSD test}
+
+\item{round.digits}{Use decimal values from 0 to 3}
 }
 \value{
 ANOVA, interpretation of ANOVA, R-square, normality test result, SEd and multiple comparison test result
