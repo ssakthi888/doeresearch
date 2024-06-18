@@ -58,13 +58,13 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
         rename(Treatments = M)
       
       # Calculate mean row and mean column
-      mean_row <- result %>%
+      mean_row <- round(result %>%
         summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
-        mutate(Treatments = "Mean")
+        mutate(Treatments = "Mean"),2)
       
-      mean_col <- result %>%
+      mean_col <- round(result %>%
         rowwise() %>%
-        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE))
+        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE)),2)
       
       # Combine mean_row and mean_col into final result
       result <- bind_rows(mean_col, mean_row)
