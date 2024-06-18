@@ -5,18 +5,17 @@
 #' @param main.plot vector containing main-plot levels
 #' @param sub.plot vector containing sub-plot levels
 #' @param mean.comparison.test 0 for no test, 1 for LSD test, 2 for Dunccan test and 3 for HSD test
+#' @param round.digits enter number of decimal digits to be displayed (0,1,2,3)
 #' @importFrom agricolae LSD.test HSD.test duncan.test
 #' @importFrom stats anova lm shapiro.test pf
-#' @importFrom dplyr %>% filter arrange
-#' @importFrom tidyr spread gather
 #' @return ANOVA, interpretation of ANOVA, R-square, normality test result, SEd and multiple comparison test result
 #' @export
 
-splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
+splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,round.digits) {
   if (mean.comparison.test == 0) {
-    sak888 <- split2(data, block, main.plot, sub.plot, mean.comparison.test)
+    sak888 <- split2(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
   } else {
-    results <- split2(data, block, main.plot, sub.plot, mean.comparison.test)
+    results <- split2(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
     result2 <- data.frame()
     
     sak777 <- list()
@@ -44,7 +43,7 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
       
       # Rename dependent.var to value and round it to 2 decimal places
       m_testAB <- m_testAB %>% rename(value = dependent.var)
-      m_testAB$value <- round(m_testAB$value, 2)
+      m_testAB$value <- round(m_testAB$value, round.digits)
       
       # Arrange by S and then M
       m_testAB <- m_testAB %>% arrange(S) %>% arrange(M)
@@ -60,13 +59,14 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
       # Calculate mean row and mean column
       mean_row <- result %>%
         summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
-        mutate(Treatments = "Mean")
+        mutate(Treatments = "Mean")%>%
+        mutate(across(where(is.numeric), ~ round(., round.digits)))
       
       mean_col <- result %>%
         rowwise() %>%
-        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE))
-      mean_row <- round(mean_row,2)
-      mean_col <- round(mean_col,2)
+        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE))%>%
+        mutate(across(where(is.numeric), ~ round(., round.digits)))
+      
       # Combine mean_row and mean_col into final result
       result <- bind_rows(mean_col, mean_row)
       
@@ -92,8 +92,8 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test) {
   return(sak888)
 }
 
-split2<-function(data,block,main.plot,sub.plot,mean.comparison.test){
-  split1<-function(dependent.var,block,main.plot,sub.plot,mean.comparison.test){
+split2<-function(data,block,main.plot,sub.plot,mean.comparison.test,round.digits){
+  split1<-function(dependent.var,block,main.plot,sub.plot,mean.comparison.test,round.digits){
     dependent.var<-as.numeric(dependent.var)
     block<-as.factor(block)
     main.plot<-as.factor(main.plot)
@@ -205,7 +205,7 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test){
     CD1 = c(CD_main, CD_sub, CD_MxS, CD_SxM)
     
     sak123 <- data.frame(Category = c("Main", "Sub", "MxS", "SxM"),
-                         SEd=round(SEd1,3),CD=round(CD1,3),CV=round(CV1,3))
+                         SEd=round(SEd1,round.digits),CD=round(CD1,round.digits),CV=round(CV1,round.digits))
     sak123 <- as.data.frame(t(sak123))
     colnames(sak123) <- sak123[1, ]
     sak123<- sak123[-1, ]
@@ -213,7 +213,14 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test){
     # Add significance indication
     significant <- ifelse(anova1[c(2, 4, 5, 5), 5] <= 0.05, "S", "NS")
     sak123 <- rbind(sak123, SIG = significant)
-     
+    
+    # Get existing row names as a new column
+    existing_row_names1 <- rownames(sak123)
+    sak123 <- cbind(LSD=existing_row_names1, sak123)
+    
+    # Set numeric row names
+    rownames(sak123) <- 1:nrow(sak123) 
+    
     if (mean.comparison.test == 0){
       m.testA<-"No multiple comparison test selected"
       m.testB<-m.testA
@@ -253,13 +260,11 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test){
   colnumber<-ncol(data)
   output<-list()
   for (j in 1:colnumber){
-    output[[j]]<-split1(fiftn[[j]],block,main.plot,sub.plot,mean.comparison.test)
+    output[[j]]<-split1(fiftn[[j]],block,main.plot,sub.plot,mean.comparison.test,round.digits)
   }
   names(output)<-names(data)
   return(output)
 }
-
-
 
 
 convert<-function(data1){
