@@ -25,6 +25,7 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
       sak777 <- c(sak777, list(sak77))
     }
     
+    sak1234 <- list()
     
     for (name in names(results)) {
       if (mean.comparison.test == 1) {
@@ -43,6 +44,7 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
       
       # Rename dependent.var to value and round it to 2 decimal places
       m_testAB <- m_testAB %>% rename(value = dependent.var)
+      
       m_testAB$value <- round(m_testAB$value, round.digits)
       
       # Arrange by S and then M
@@ -56,37 +58,41 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
         pivot_wider(names_from = S, values_from = value) %>%
         rename(Treatments = M)
       
-      # Calculate mean row and mean column
+      # Step 1: Compute mean for each numeric column and add a "Mean" row
       mean_row <- result %>%
         summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
-        mutate(Treatments = "Mean")%>%
+        mutate(Treatments = "Mean") %>%
         mutate(across(where(is.numeric), ~ round(., round.digits)))
       
+      # Step 2: Compute mean for each row across numeric columns and add a "Mean" column
       mean_col <- result %>%
         rowwise() %>%
-        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE))%>%
+        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE)) %>%
+        ungroup() %>%  # ungroup after rowwise operation
         mutate(across(where(is.numeric), ~ round(., round.digits)))
       
-      # Combine mean_row and mean_col into final result
+      # Combine mean_row and mean_col into the final result
       result <- bind_rows(mean_col, mean_row)
       
+      # Step 3: Calculate the total mean (mean of mean row/mean column)
+      total_mean_value <- mean(c(
+        mean_row %>% select(where(is.numeric)) %>% unlist(), 
+        mean_col %>% select(Mean) %>% unlist()
+      ), na.rm = TRUE)
+      
+      # Step 4: Replace NA in the "Mean" column of the "Mean" row with total_mean_value
+      result <- result %>%
+        mutate(Mean = ifelse(Treatments == "Mean", round(total_mean_value, round.digits), Mean))
+
       # Convert all columns in result to characters
       result[] <- lapply(result, as.character)
-      if (length(names(results))>1){# Create a row with column names as values
-        colnames_row <- as.data.frame(matrix(colnames(result), nrow = 1, ncol = ncol(result)), stringsAsFactors = FALSE)
-        colnames(colnames_row) <- colnames(result)
-        
-        # Bind colnames_row and result to result2
-        result2 <- bind_rows(result2, colnames_row, result)
-        result2=result2[-1,]
-      } else {
-        # Bind colnames_row and result to result2
-        result2 <- bind_rows(result2,result)
-      }
+       result5 <- result[]
+       sak1234 = c(sak1234,list(result5))
     }
     
+    
     # Combine results and result2 into sak888 list
-    sak888 <- list(results, result2,sak777)
+    sak888 <- list(results, sak1234,sak777)
     
   }
   return(sak888)
@@ -204,22 +210,29 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test,round.digits
     t_test1 = c(t_main, t_sub, t_MxS, t_SxM)
     CD1 = c(CD_main, CD_sub, CD_MxS, CD_SxM)
     
-    sak123 <- data.frame(Category = c("Main", "Sub", "MxS", "SxM"),
-                         SEd=round(SEd1,round.digits),CD=round(CD1,round.digits),CV=round(CV1,round.digits))
+    sak123 <- data.frame(Category = c("Main", "Sub", "M x S", "S x M"),
+                         SEd=round(SEd1,round.digits),CD=round(CD1,round.digits))
+    # Add significance indication
+    significant <- ifelse(anova1[c(2, 4, 5, 5), 5] <= 0.05, "S", "NS")
+    sak123$CD <- ifelse(significant == "NS", "NS", sak123$CD)
+    sak123 <- sak123 %>% rename("CD (P=0.05)"=CD)
+    
     sak123 <- as.data.frame(t(sak123))
     colnames(sak123) <- sak123[1, ]
     sak123<- sak123[-1, ]
     
-    # Add significance indication
-    significant <- ifelse(anova1[c(2, 4, 5, 5), 5] <= 0.05, "S", "NS")
-    sak123 <- rbind(sak123, SIG = significant)
-    
     # Get existing row names as a new column
     existing_row_names1 <- rownames(sak123)
     sak123 <- cbind(LSD=existing_row_names1, sak123)
-    
+    # Create an empty column as the first column
+   # "NA" <- rep("", nrow(sak123))
+   # names(empty_col) <- ""  # Set an empty name to avoid displaying any column name
+    # Add the empty column to ft2 data frame
+    #sak123 <- cbind("NA", sak123)
+
     # Set numeric row names
     rownames(sak123) <- 1:nrow(sak123) 
+    
     
     if (mean.comparison.test == 0){
       m.testA<-"No multiple comparison test selected"
@@ -272,3 +285,4 @@ convert<-function(data1){
   data1<-as.list(data1)
   return(data1)
 }
+
