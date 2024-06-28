@@ -6,12 +6,16 @@
 #' @param sub.plot vector containing sub-plot levels
 #' @param mean.comparison.test 0 for no test, 1 for LSD test, 2 for Dunccan test and 3 for HSD test
 #' @param round.digits enter number of decimal digits to be displayed (0,1,2,3)
+#' @param alpha select 0 for mean value only or 1 for mean value with mean.comparison.test
 #' @importFrom agricolae LSD.test HSD.test duncan.test
 #' @importFrom stats anova lm shapiro.test pf
+#' @importFrom dplyr
+#' @importFrom tidyr
 #' @return ANOVA, interpretation of ANOVA, R-square, normality test result, SEd and multiple comparison test result
 #' @export
 
-splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,round.digits) {
+splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,round.digits,alpha) {
+  if (alpha == 0) {
   if (mean.comparison.test == 0) {
     sak888 <- split2(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
   } else {
@@ -26,11 +30,18 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
     }
     
     sak1234 <- list()
-    
+    sak4321 <- list()
     for (name in names(results)) {
       if (mean.comparison.test == 1) {
-        m_testAB <- results[[name]][[1]][[13]][[2]]} else {
-          m_testAB <- results[[name]][[1]][[13]][[3]]}
+        m_testAB <- results[[name]][[1]][[13]][[2]]
+        main_test<- results[[name]][[1]][[9]][[2]]
+        sub_test<- results[[name]][[1]][[11]][[2]]
+        } else {
+          m_testAB <- results[[name]][[1]][[13]][[3]]
+          main_test<- results[[name]][[1]][[9]][[3]]
+          sub_test<- results[[name]][[1]][[11]][[3]]
+          
+          }
       
       # Get existing row names as a new column
       existing_row_names <- rownames(m_testAB)
@@ -54,18 +65,18 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
       m_testAB <- m_testAB[, 1:3]
       
       # Pivot wider based on S, rename Treatments column
-      result <- m_testAB %>%
+      result0 <- m_testAB %>%
         pivot_wider(names_from = S, values_from = value) %>%
         rename(Treatments = M)
       
       # Step 1: Compute mean for each numeric column and add a "Mean" row
-      mean_row <- result %>%
+      mean_row <- result0 %>%
         summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
         mutate(Treatments = "Mean") %>%
         mutate(across(where(is.numeric), ~ round(., round.digits)))
       
       # Step 2: Compute mean for each row across numeric columns and add a "Mean" column
-      mean_col <- result %>%
+      mean_col <- result0 %>%
         rowwise() %>%
         mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE)) %>%
         ungroup() %>%  # ungroup after rowwise operation
@@ -88,18 +99,168 @@ splitplot <- function(data, block, main.plot, sub.plot, mean.comparison.test,rou
       result[] <- lapply(result, as.character)
        result5 <- result[]
        sak1234 = c(sak1234,list(result5))
+       
+       
+       #main
+       write.csv(main_test,"temp999.csv"); main_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+       main_test=main_test %>% arrange(X)  %>% rename(Main=dependent.var) %>% rename(Treatments=X)
+       main_test$Main <- round(main_test$Main, round.digits)
+       main_test=main_test %>% unite("Mean",Main:groups,sep="",na.rm=TRUE,remove = TRUE)
+       
+       
+       #sub
+       write.csv(sub_test,"temp999.csv"); sub_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+       sub_test=sub_test %>% arrange(X)  %>% rename(Sub=dependent.var) %>% rename(Treatments=X)
+       sub_test$Sub <- round(sub_test$Sub, round.digits)
+       sub_test=sub_test %>% unite("Mean",Sub:groups,sep="",na.rm=TRUE,remove = TRUE)
+       sub_test=as.data.frame(t(sub_test),stringsAsFactors = FALSE)
+       col_names <- make.unique(as.character(sub_test[1,]))
+       colnames(sub_test) <- col_names
+       sub_test <- sub_test[-1, ]
+       write.csv(sub_test,"temp999.csv"); sub_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+       sub_test=sub_test %>% rename(Treatments=X)
+       sub_test$Mean <- NA
+       
+       result_test1=merge(result0,main_test, by = "Treatments", all = TRUE)
+       result_test1=rbind(result_test1,sub_test)
+       result_test1 <- result_test1 %>%
+         mutate(Mean = ifelse(Treatments == "Mean", round(total_mean_value, round.digits), Mean))
+       
+       # Convert all columns in result to characters
+       result_test1[] <- lapply(result_test1, as.character)
+       result_test <- result_test1[]
+       sak4321 = c(sak4321,list(result_test))
+    }
+
+    sak888 <- list(results, sak1234,sak777) 
+    
+  }
+  } else 
+    if (alpha == 1){  if (mean.comparison.test == 0) {
+    sak888 <- split2(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
+  } else {
+    results <- split2(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
+    result2 <- data.frame()
+    
+    sak777 <- list()
+    
+    for (name in names(results)) {
+      sak77 <- results[[name]][[1]][[14]]
+      sak777 <- c(sak777, list(sak77))
     }
     
+    sak1234 <- list()
+    sak4321 <- list()
+    for (name in names(results)) {
+      if (mean.comparison.test == 1) {
+        m_testAB <- results[[name]][[1]][[13]][[2]]
+        main_test<- results[[name]][[1]][[9]][[2]]
+        sub_test<- results[[name]][[1]][[11]][[2]]
+      } else {
+        m_testAB <- results[[name]][[1]][[13]][[3]]
+        main_test<- results[[name]][[1]][[9]][[3]]
+        sub_test<- results[[name]][[1]][[11]][[3]]
+        
+      }
+      
+      # Get existing row names as a new column
+      existing_row_names <- rownames(m_testAB)
+      m_testAB <- cbind(TRT = existing_row_names, m_testAB)
+      
+      # Set numeric row names
+      rownames(m_testAB) <- 1:nrow(m_testAB)
+      
+      # Separate TRT into M and S columns based on ":"
+      m_testAB <- m_testAB %>% separate(TRT, into = c("M", "S"), sep = ":")
+      
+      # Rename dependent.var to value and round it to 2 decimal places
+      m_testAB <- m_testAB %>% rename(value = dependent.var)
+      
+      m_testAB$value <- round(m_testAB$value, round.digits)
+      
+      # Arrange by S and then M
+      m_testAB <- m_testAB %>% arrange(S) %>% arrange(M)
+      
+      # Select relevant columns
+      m_testAB <- m_testAB[, 1:3]
+      
+      # Pivot wider based on S, rename Treatments column
+      result0 <- m_testAB %>%
+        pivot_wider(names_from = S, values_from = value) %>%
+        rename(Treatments = M)
+      
+      # Step 1: Compute mean for each numeric column and add a "Mean" row
+      mean_row <- result0 %>%
+        summarise(across(where(is.numeric), mean, na.rm = TRUE)) %>%
+        mutate(Treatments = "Mean") %>%
+        mutate(across(where(is.numeric), ~ round(., round.digits)))
+      
+      # Step 2: Compute mean for each row across numeric columns and add a "Mean" column
+      mean_col <- result0 %>%
+        rowwise() %>%
+        mutate(Mean = mean(c_across(where(is.numeric)), na.rm = TRUE)) %>%
+        ungroup() %>%  # ungroup after rowwise operation
+        mutate(across(where(is.numeric), ~ round(., round.digits)))
+      
+      # Combine mean_row and mean_col into the final result
+      result <- bind_rows(mean_col, mean_row)
+      
+      # Step 3: Calculate the total mean (mean of mean row/mean column)
+      total_mean_value <- mean(c(
+        mean_row %>% select(where(is.numeric)) %>% unlist(), 
+        mean_col %>% select(Mean) %>% unlist()
+      ), na.rm = TRUE)
+      
+      # Step 4: Replace NA in the "Mean" column of the "Mean" row with total_mean_value
+      result <- result %>%
+        mutate(Mean = ifelse(Treatments == "Mean", round(total_mean_value, round.digits), Mean))
+      
+      # Convert all columns in result to characters
+      result[] <- lapply(result, as.character)
+      result5 <- result[]
+      sak1234 = c(sak1234,list(result5))
+      
+      
+      #main
+      write.csv(main_test,"temp999.csv"); main_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+      main_test=main_test %>% arrange(X)  %>% rename(Main=dependent.var) %>% rename(Treatments=X)
+      main_test$Main <- round(main_test$Main, round.digits)
+      main_test=main_test %>% unite("Mean",Main:groups,sep="",na.rm=TRUE,remove = TRUE)
+      
+      
+      #sub
+      write.csv(sub_test,"temp999.csv"); sub_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+      sub_test=sub_test %>% arrange(X)  %>% rename(Sub=dependent.var) %>% rename(Treatments=X)
+      sub_test$Sub <- round(sub_test$Sub, round.digits)
+      sub_test=sub_test %>% unite("Mean",Sub:groups,sep="",na.rm=TRUE,remove = TRUE)
+      sub_test=as.data.frame(t(sub_test),stringsAsFactors = FALSE)
+      col_names <- make.unique(as.character(sub_test[1,]))
+      colnames(sub_test) <- col_names
+      sub_test <- sub_test[-1, ]
+      write.csv(sub_test,"temp999.csv"); sub_test=read.csv("temp999.csv"); file.remove("temp999.csv")
+      sub_test=sub_test %>% rename(Treatments=X)
+      sub_test$Mean <- NA
+      
+      result_test1=merge(result0,main_test, by = "Treatments", all = TRUE)
+      result_test1=rbind(result_test1,sub_test)
+      result_test1 <- result_test1 %>%
+        mutate(Mean = ifelse(Treatments == "Mean", round(total_mean_value, round.digits), Mean))
+      
+      # Convert all columns in result to characters
+      result_test1[] <- lapply(result_test1, as.character)
+      result_test <- result_test1[]
+      sak4321 = c(sak4321,list(result_test))
+    }
+    sak888 <- list(results, sak4321,sak777) 
     
-    # Combine results and result2 into sak888 list
-    sak888 <- list(results, sak1234,sak777)
-    
+  }} else {
+    stop("alpha must be 0 or 1")
   }
   return(sak888)
 }
 
 split2<-function(data,block,main.plot,sub.plot,mean.comparison.test,round.digits){
-  split1<-function(dependent.var,block,main.plot,sub.plot,mean.comparison.test,round.digits){
+  split1<-function(dependent.var,block,main.plot,sub.plot,mean.comparison.test,round.digits,alpha){
     dependent.var<-as.numeric(dependent.var)
     block<-as.factor(block)
     main.plot<-as.factor(main.plot)
@@ -238,6 +399,7 @@ split2<-function(data,block,main.plot,sub.plot,mean.comparison.test,round.digits
       m.testA<-"No multiple comparison test selected"
       m.testB<-m.testA
       m.testAB<-m.testA
+      sak123<-m.testA
     }
     if (mean.comparison.test == 1){
       m.test1A<-LSD.test(dependent.var,main.plot,anova1[3,1],anova1[3,3])
@@ -285,4 +447,3 @@ convert<-function(data1){
   data1<-as.list(data1)
   return(data1)
 }
-
