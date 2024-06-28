@@ -4,7 +4,7 @@
 \alias{splitplot}
 \title{Analysis of Split plot design}
 \usage{
-splitplot(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
+splitplot(data, block, main.plot, sub.plot, mean.comparison.test,round.digits,alpha)
 }
 \arguments{
 \item{data}{dependent variables}
@@ -18,6 +18,9 @@ splitplot(data, block, main.plot, sub.plot, mean.comparison.test,round.digits)
 \item{mean.comparison.test}{0 for no test, 1 for LSD test, 2 for Dunccan test and 3 for HSD test}
 
 \item{round.digits}{Use decimal values from 0 to 3}
+
+\item{alpha}{0 for mean value only or 1 for mean value with mean.comparison.test}
+
 }
 \value{
 ANOVA, interpretation of ANOVA, R-square, normality test result, SEd and multiple comparison test result
